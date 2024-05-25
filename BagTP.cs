@@ -1,4 +1,4 @@
-﻿#region License (GPL v2)
+#region License (GPL v2)
 /*
     Bag Teleport
     Copyright (c) RFC1920 <desolationoutpostpve@gmail.com>
@@ -30,7 +30,7 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Bag Teleport", "RFC1920", "1.0.2")]
+    [Info("Bag Teleport", "RFC1920", "1.0.3")]
     [Description("Allow teleport to sleeping bags")]
     internal class BagTP : RustPlugin
     {
@@ -59,8 +59,16 @@ namespace Oxide.Plugins
         {
             lang.RegisterMessages(new Dictionary<string, string>
             {
-                ["notauthorized"] = "You don't have permission to use this command.",
-                ["enabled"] = "Enable BagBase is {0}"
+                ["notauthorized"] = "You don't have permission to use this command",
+                ["notyours"] = "Not your bag",
+                ["nobag"] = "No bag found",
+                ["bagset"] = "Bag {0} set",
+                ["nosuchbag"] = "No such bag",
+                ["bagremoved"] = "Bag {0} removed",
+                ["bagdestroyed"] = "Bag {0} at {1}({2}) was destroyed",
+                ["bagtooclose"] = "Too close to bag",
+                ["bagteleport"] = "Teleporting to bag {0} in {1} second(s)",
+                ["bags"] = "Bags:\n{0}"
             }, this);
         }
         #endregion Message
@@ -100,8 +108,7 @@ namespace Oxide.Plugins
             SleepingBag bag = ent.GetComponent<SleepingBag>();
             if (bag?.OwnerID != player.userID)
             {
-                Puts(bag?.ShortPrefabName);
-                SendReply(player, "Not your bag");
+                Message(player.IPlayer, "notyours");
                 return Vector3.zero;
             }
 
@@ -173,7 +180,7 @@ namespace Oxide.Plugins
                 Vector3 loc = FindBag(player, out bagname, out bagid);
                 if (loc == Vector3.zero)
                 {
-                    SendReply(player, "No bag found");
+                    Message(iplayer, "nobag");
                     return;
                 }
                 if (args.Length == 2)
@@ -190,7 +197,7 @@ namespace Oxide.Plugins
                 };
                 bagTeleport[player.userID].Add(bag);
                 SaveData();
-                SendReply(player, $"Bag {bagname} set");
+                Message(iplayer, "bagset", bagname);
             }
             else if (args.Length == 2 && command == "remove")// || (args.Length == 2 && args[0] == "remove"))
             {
@@ -203,21 +210,21 @@ namespace Oxide.Plugins
                 BagTeleport bag = bagTeleport[player.userID].Find(x => x.name == bagname);
                 if (bag == null)
                 {
-                    SendReply(player, "No such bag");
+                    Message(iplayer, "nosuchbag");
                     return;
                 }
                 bagTeleport[player.userID].Remove(bag);
                 SaveData();
-                SendReply(player, $"Bag {bagname} removed");
+                Message(iplayer, "bagremoved", bagname);
             }
             else if (args.Length == 1 && args[0] == "list")
             {
-                string output = "Bags:\n";
-                foreach(BagTeleport bag in bagTeleport[player.userID])
+                string output = "";
+                foreach (BagTeleport bag in bagTeleport[player.userID])
                 {
                     output += $"  {bag.name} {bag.location}({bag.grid})\n";
                 }
-                SendReply(player, output);
+                Message(iplayer, "bags", output);
             }
             else if (args.Length == 1)
             {
@@ -231,7 +238,7 @@ namespace Oxide.Plugins
                 SleepingBag realbag = BaseNetworkable.serverEntities.Find(new NetworkableId(bag.id)) as SleepingBag;
                 if (realbag == null)
                 {
-                    SendReply(player, $"Bag {bag.name} at {bag.location}({bag.grid}) was destroyed");
+                    Message(iplayer, "bagdestroyed", bag.name, bag.location, bag.grid);
                     bagTeleport[player.userID].Remove(bag);
                     SaveData();
                     return;
@@ -246,10 +253,10 @@ namespace Oxide.Plugins
                 }
                 if (Vector3.Distance(realbag.transform.position, player.transform.position) < 5)
                 {
-                    SendReply(player, "Too close to bag");
+                    Message(iplayer, "bagtooclose");
                     return;
                 }
-                SendReply(player, $"Teleporting to bag {bag.name} in {delay} seconds");
+                Message(iplayer, "bagteleport", bag.name, delay.ToString());
 
                 bag.usageCount++;
                 bag.location = realbag.transform.position;
