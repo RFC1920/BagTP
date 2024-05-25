@@ -1,4 +1,6 @@
 # BagTP
+![](https://i.imgur.com/Wvt417j.png)
+
 Allows players to set saved teleport positions at sleeping bags they place.
 
 This is not automatic, and the player must look at the bag and type /setbag to save.
@@ -26,7 +28,7 @@ You can also teleport to moving bags, e.g. on tugboats.
   "Version": {
     "Major": 1,
     "Minor": 0,
-    "Patch": 1
+    "Patch": 3
   }
 }
 ```
