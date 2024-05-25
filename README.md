@@ -20,7 +20,8 @@ You can also teleport to moving bags, e.g. on tugboats.
 ```json
 {
   "Options": {
-    "debug": true
+    "Countdown delay for static teleport": 5.0,
+    "debug": false
   },
   "Version": {
     "Major": 1,

@@ -1,14 +1,36 @@
-﻿using Newtonsoft.Json;
+﻿#region License (GPL v2)
+/*
+    Bag Teleport
+    Copyright (c) RFC1920 <desolationoutpostpve@gmail.com>
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU General Public License
+    as published by the Free Software Foundation; version 2
+    of the License only.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+    Optionally you can also view the license at <http://www.gnu.org/licenses/>.
+*/
+#endregion License (GPL v2)
 using Oxide.Core;
 using Oxide.Core.Plugins;
 using System.Collections.Generic;
 using Oxide.Core.Libraries.Covalence;
 using UnityEngine;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Bag Teleport", "RFC1920", "1.0.1")]
+    [Info("Bag Teleport", "RFC1920", "1.0.2")]
     [Description("Allow teleport to sleeping bags")]
     internal class BagTP : RustPlugin
     {
@@ -217,7 +239,7 @@ namespace Oxide.Plugins
 
                 // Get and update bag position, which might be on a boat.
                 // 5 seconds will be a long time if the boat is moving :)
-                int delay = 5;
+                float delay = configData.Options.countdownTimer;
                 if (Vector3.Distance(bag.location, realbag.transform.position) > 0.2f)
                 {
                     delay = 0;
@@ -328,12 +350,20 @@ namespace Oxide.Plugins
 
         public class Options
         {
+            [JsonProperty(PropertyName = "Countdown delay for static teleport")]
+            public float countdownTimer;
+
             public bool debug;
         }
 
         private void LoadConfigVariables()
         {
             configData = Config.ReadObject<ConfigData>();
+
+            if (configData.Version < new VersionNumber(1, 0, 2) && configData.Options.countdownTimer == 0)
+            {
+                configData.Options.countdownTimer = 5;
+            }
 
             configData.Version = Version;
             SaveConfig(configData);
@@ -346,6 +376,7 @@ namespace Oxide.Plugins
             {
                 Options = new Options()
                 {
+                    countdownTimer = 5,
                     debug = false
                 },
                 Version = Version
